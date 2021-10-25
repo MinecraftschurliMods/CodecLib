@@ -30,7 +30,7 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener {
     private final Codec<T> codec;
     private final Codec<T> networkCodec;
     private final Validator<Map<ResourceLocation, T>> validator;
-    private Map<ResourceLocation, T> data;
+    private Map<ResourceLocation, T> data = new HashMap<>();
     protected final Logger logger;
 
     public CodecDataManager(String folderName, Codec<T> codec, Logger logger) {
