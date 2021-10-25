@@ -80,6 +80,12 @@ repositories {
 
 dependencies {
     minecraft group: 'net.minecraftforge', name: 'forge', version: "${project.mc_version}-${project.forge_version}"
+    var projects = rootProject.subprojects.collect {it.path }
+    if (projects.contains(':projects:simplenetlib')) {
+        compileOnly project(path: ':projects:simplenetlib', configuration: 'deobfJar')
+    } else {
+        compileOnly fg.deobf('com.github.minecraftschurli:simplenetlib:1.17.1-1.0')
+    }
     compileOnly 'org.jetbrains:annotations:22.0.0'
 }
 
