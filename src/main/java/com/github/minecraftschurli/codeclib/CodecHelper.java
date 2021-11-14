@@ -1,10 +1,14 @@
 package com.github.minecraftschurli.codeclib;
 
+import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.SerializationTags;
+import net.minecraft.tags.Tag;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistryEntry;
@@ -28,6 +32,20 @@ public final class CodecHelper {
 
     public static <T extends IForgeRegistryEntry<T>> Codec<T> forRegistry(Supplier<IForgeRegistry<T>> registrySupplier) {
         return ResourceLocation.CODEC.xmap(resourceLocation -> registrySupplier.get().getValue(resourceLocation), t -> registrySupplier.get().getKey(t));
+    }
+
+    public static <T> Codec<Either<T, Tag<T>>> instanceOrTag(Registry<T> registry) {
+        return Codec.STRING.xmap(
+                s -> s.startsWith("#")
+                        ? Either.right(SerializationTags.getInstance()
+                                                        .getOrEmpty(registry.key())
+                                                        .getTagOrEmpty(new ResourceLocation(s.substring(1))))
+                        : Either.left(registry.get(new ResourceLocation(s))),
+                e -> e.map((T block) -> registry.getKey(block).toString(),
+                           (Tag<T> tag) -> "#"+SerializationTags.getInstance()
+                                                                .getOrEmpty(registry.key())
+                                                                .getId(tag)
+                                                                .toString()));
     }
 
     private static <K, V> Map<K, V> pairListToMap(List<Pair<K, V>> pairs) {
