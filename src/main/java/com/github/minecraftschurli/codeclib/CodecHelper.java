@@ -30,6 +30,14 @@ public final class CodecHelper {
         return codec.listOf().xmap((Function<List<T>, Set<T>>) HashSet::new, (Function<Set<T>, List<T>>) ArrayList::new);
     }
 
+    public static <T extends Enum<T>> Codec<T> forStringEnum(Class<T> clazz) {
+        return Codec.STRING.xmap(s -> Enum.valueOf(clazz, s), Enum::name);
+    }
+
+    public static <T extends Enum<T>> Codec<T> forIntEnum(Class<T> clazz) {
+        return Codec.INT.xmap(i -> clazz.getEnumConstants()[i], Enum::ordinal);
+    }
+
     public static <T extends IForgeRegistryEntry<T>> Codec<T> forRegistry(Supplier<IForgeRegistry<T>> registrySupplier) {
         return ResourceLocation.CODEC.xmap(resourceLocation -> registrySupplier.get().getValue(resourceLocation), t -> registrySupplier.get().getKey(t));
     }
