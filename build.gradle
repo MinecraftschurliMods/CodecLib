@@ -1,25 +1,11 @@
-buildscript {
-    repositories {
-        maven { url = 'https://maven.minecraftforge.net' }
-        maven { url = 'https://maven.parchmentmc.org' }
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.8', ext: 'pom'
-        classpath group: 'org.apache.maven', name: 'maven-plugin-api', version: '3.8.1'
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: "${project.forgegradle_version}", changing: true
-        classpath group: 'org.parchmentmc', name: 'librarian', version: "${project.librarian_version}"
-    }
-}
-
 plugins {
-    id 'maven-publish'
-    id 'eclipse'
     id 'idea'
+    id 'eclipse'
+    id 'maven-publish'
+    id 'org.ec4j.editorconfig'
+    id 'net.minecraftforge.gradle'
+    id 'org.parchmentmc.librarian.forgegradle'
 }
-
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.parchmentmc.librarian.forgegradle'
 //=============================================
 
 group = "${project.lib_group}"
@@ -73,7 +59,7 @@ dependencies {
     if (projects.contains(':projects:simplenetlib')) {
         compileOnly project(path: ':projects:simplenetlib', configuration: 'deobfJar')
     } else {
-        compileOnly fg.deobf('com.github.minecraftschurli:simplenetlib:1.17.1-1.0-SNAPSHOT')
+        compileOnly fg.deobf('com.github.minecraftschurli:simplenetlib:1.18-1.0-SNAPSHOT')
     }
     compileOnly 'org.jetbrains:annotations:22.0.0'
 }
