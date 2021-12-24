@@ -1,7 +1,7 @@
 package com.github.minecraftschurlimods.codeclib;
 
-import com.github.minecraftschurli.simplenetlib.IPacket;
-import com.github.minecraftschurli.simplenetlib.NetworkHandler;
+import com.github.minecraftschurlimods.simplenetlib.IPacket;
+import com.github.minecraftschurlimods.simplenetlib.NetworkHandler;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.gson.Gson;
