@@ -1,4 +1,4 @@
-package com.github.minecraftschurli.codeclib;
+package com.github.minecraftschurlimods.codeclib;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;

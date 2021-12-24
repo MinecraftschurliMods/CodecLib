@@ -1,4 +1,4 @@
-package com.github.minecraftschurli.codeclib;
+package com.github.minecraftschurlimods.codeclib;
 
 import com.github.minecraftschurli.simplenetlib.IPacket;
 import com.github.minecraftschurli.simplenetlib.NetworkHandler;

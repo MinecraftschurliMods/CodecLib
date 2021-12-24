@@ -1,6 +1,6 @@
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-package com.github.minecraftschurli.codeclib;
+package com.github.minecraftschurlimods.codeclib;
 
 import com.mojang.blaze3d.MethodsReturnNonnullByDefault;
 
