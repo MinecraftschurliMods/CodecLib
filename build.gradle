@@ -64,7 +64,7 @@ dependencies {
     if (projects.contains(':projects:simplenetlib')) {
         compileOnly project(path: ':projects:simplenetlib', configuration: 'deobfJar')
     } else {
-        compileOnly fg.deobf('com.github.minecraftschurli:simplenetlib:1.18-1.0-SNAPSHOT')
+        compileOnly fg.deobf('com.github.minecraftschurli:simplenetlib:1.18.1-1.0-SNAPSHOT')
     }
     compileOnly 'org.jetbrains:annotations:22.0.0'
 }
