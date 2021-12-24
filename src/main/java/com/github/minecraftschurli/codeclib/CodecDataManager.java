@@ -148,6 +148,10 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
         profiler.pop();
     }
 
+    protected void receiveSyncedData(Map<ResourceLocation, T> data) {
+        this.data = data;
+    }
+
     private Map<ResourceLocation, T> mapData(Map<ResourceLocation, JsonElement> dataIn) {
         Map<ResourceLocation, T> data = new HashMap<>();
         dataIn.forEach((key, jsonElement) -> this.codec.decode(JsonOps.INSTANCE, jsonElement)
@@ -187,7 +191,7 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
 
         @Override
         public void handle(NetworkEvent.Context ctx) {
-            ctx.enqueueWork(() -> getDataManager().data = this.data);
+            ctx.enqueueWork(() -> getDataManager().receiveSyncedData(this.data));
         }
 
         @SuppressWarnings("unchecked")

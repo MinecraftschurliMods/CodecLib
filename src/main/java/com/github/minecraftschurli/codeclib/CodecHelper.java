@@ -9,6 +9,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.SerializationTags;
 import net.minecraft.tags.Tag;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistryEntry;
@@ -21,6 +22,8 @@ public final class CodecHelper {
     public static final Codec<Ingredient> INGREDIENT = Codec.PASSTHROUGH.xmap(
             dynamic -> Ingredient.fromJson(dynamic.convert(JsonOps.INSTANCE).getValue()),
             ingredient -> new Dynamic<>(JsonOps.INSTANCE, ingredient.toJson()));
+
+    public static final Codec<Ingredient> NETWORK_INGREDIENT = ItemStack.CODEC.listOf().xmap(itemStacks -> Ingredient.fromValues(itemStacks.stream().map(Ingredient.ItemValue::new)), ingredient -> Arrays.asList(ingredient.getItems()));
 
     public static <K,V> Codec<Map<K,V>> mapOf(Codec<K> keyCodec, Codec<V> valueCodec) {
         return Codec.compoundList(keyCodec, valueCodec).xmap(CodecHelper::pairListToMap, CodecHelper::mapToPairList);
