@@ -27,15 +27,16 @@ public final class CodecHelper {
     public static final Codec<Ingredient> INGREDIENT = Codec.PASSTHROUGH.xmap(
             dynamic -> Ingredient.fromJson(dynamic.convert(JsonOps.INSTANCE).getValue()),
             ingredient -> new Dynamic<>(JsonOps.INSTANCE, ingredient.toJson()));
-
-    public static final Codec<Ingredient> NETWORK_INGREDIENT = ItemStack.CODEC.listOf().xmap(itemStacks -> Ingredient.fromValues(itemStacks.stream().map(Ingredient.ItemValue::new)), ingredient -> Arrays.asList(ingredient.getItems()));
+    public static final Codec<Ingredient> NETWORK_INGREDIENT = ItemStack.CODEC.listOf().xmap(
+            itemStacks -> Ingredient.fromValues(itemStacks.stream().map(Ingredient.ItemValue::new)),
+            ingredient -> Arrays.asList(ingredient.getItems()));
 
     public static <K,V> Codec<Map<K,V>> mapOf(Codec<K> keyCodec, Codec<V> valueCodec) {
         return Codec.compoundList(keyCodec, valueCodec).xmap(CodecHelper::pairListToMap, CodecHelper::mapToPairList);
     }
 
     public static <T> Codec<Set<T>> setOf(Codec<T> codec) {
-        return codec.listOf().xmap((Function<List<T>, Set<T>>) HashSet::new, (Function<Set<T>, List<T>>) ArrayList::new);
+        return codec.listOf().xmap(setFromList(), listFromSet());
     }
 
     public static <T extends Enum<T>> Codec<T> forStringEnum(Class<T> clazz) {
@@ -47,21 +48,29 @@ public final class CodecHelper {
     }
 
     public static <T extends IForgeRegistryEntry<T>> Codec<T> forRegistry(Supplier<IForgeRegistry<T>> registrySupplier) {
-        return ResourceLocation.CODEC.xmap(resourceLocation -> registrySupplier.get().getValue(resourceLocation), t -> registrySupplier.get().getKey(t));
+        return ResourceLocation.CODEC.xmap(resourceLocation -> registrySupplier.get().getValue(resourceLocation),
+                                           t -> registrySupplier.get().getKey(t));
     }
 
     public static <T> Codec<Either<T, Tag<T>>> instanceOrTag(Registry<T> registry) {
-        return Codec.STRING.xmap(
-                s -> s.startsWith("#")
-                        ? Either.right(SerializationTags.getInstance()
-                                                        .getOrEmpty(registry.key())
-                                                        .getTagOrEmpty(new ResourceLocation(s.substring(1))))
-                        : Either.left(registry.get(new ResourceLocation(s))),
-                e -> e.map((T block) -> registry.getKey(block).toString(),
-                           (Tag<T> tag) -> "#"+SerializationTags.getInstance()
-                                                                .getOrEmpty(registry.key())
-                                                                .getId(tag)
-                                                                .toString()));
+        return Codec.STRING.xmap(s -> getTagOrValue(registry, s),
+                                 e -> stringify(registry, e))
+                           .withLifecycle(registry.lifecycle());
+    }
+
+    private static <T> String stringify(Registry<T> registry, Either<T, Tag<T>> e) {
+        return e.map((T block) -> registry.getKey(block).toString(),
+                     (Tag<T> tag) -> "#" + SerializationTags.getInstance()
+                                                            .getOrEmpty(registry.key())
+                                                            .getId(tag)
+                                                            .toString());
+    }
+
+    private static <T> Either<T, Tag<T>> getTagOrValue(Registry<T> registry, String s) {
+        if (!s.startsWith("#")) return Either.left(registry.get(new ResourceLocation(s)));
+        return Either.right(SerializationTags.getInstance()
+                                             .getOrEmpty(registry.key())
+                                             .getTagOrEmpty(new ResourceLocation(s.substring(1))));
     }
 
     private static <K, V> Map<K, V> pairListToMap(List<Pair<K, V>> pairs) {
@@ -74,5 +83,13 @@ public final class CodecHelper {
 
     private static <K, V> Pair<K, V> entryToPair(Map.Entry<K, V> e) {
         return Pair.of(e.getKey(), e.getValue());
+    }
+
+    public static <T> Function<List<T>, Set<T>> setFromList() {
+        return HashSet::new;
+    }
+
+    public static <T> Function<Set<T>, List<T>> listFromSet() {
+        return ArrayList::new;
     }
 }
