@@ -6,6 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.core.Registry;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.SerializationTags;
 import net.minecraft.tags.Tag;
@@ -30,6 +31,10 @@ public final class CodecHelper {
     public static final Codec<Ingredient> NETWORK_INGREDIENT = ItemStack.CODEC.listOf().xmap(
             itemStacks -> Ingredient.fromValues(itemStacks.stream().map(Ingredient.ItemValue::new)),
             ingredient -> Arrays.asList(ingredient.getItems()));
+    public static final Codec<Component> COMPONENT = Codec.PASSTHROUGH.xmap(
+            dynamic -> Component.Serializer.fromJson(dynamic.convert(JsonOps.INSTANCE).getValue()),
+            component -> new Dynamic<>(JsonOps.INSTANCE, Component.Serializer.toJsonTree(component)));
+
 
     public static <K,V> Codec<Map<K,V>> mapOf(Codec<K> keyCodec, Codec<V> valueCodec) {
         return Codec.compoundList(keyCodec, valueCodec).xmap(CodecHelper::pairListToMap, CodecHelper::mapToPairList);
