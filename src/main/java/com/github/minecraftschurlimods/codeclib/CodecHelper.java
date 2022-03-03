@@ -5,11 +5,8 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
-import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.SerializationTags;
-import net.minecraft.tags.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -55,27 +52,6 @@ public final class CodecHelper {
     public static <T extends IForgeRegistryEntry<T>> Codec<T> forRegistry(Supplier<IForgeRegistry<T>> registrySupplier) {
         return ResourceLocation.CODEC.xmap(resourceLocation -> registrySupplier.get().getValue(resourceLocation),
                                            t -> registrySupplier.get().getKey(t));
-    }
-
-    public static <T> Codec<Either<T, Tag<T>>> instanceOrTag(Registry<T> registry) {
-        return Codec.STRING.xmap(s -> getTagOrValue(registry, s),
-                                 e -> stringify(registry, e))
-                           .withLifecycle(registry.lifecycle());
-    }
-
-    private static <T> String stringify(Registry<T> registry, Either<T, Tag<T>> e) {
-        return e.map((T block) -> registry.getKey(block).toString(),
-                     (Tag<T> tag) -> "#" + SerializationTags.getInstance()
-                                                            .getOrEmpty(registry.key())
-                                                            .getId(tag)
-                                                            .toString());
-    }
-
-    private static <T> Either<T, Tag<T>> getTagOrValue(Registry<T> registry, String s) {
-        if (!s.startsWith("#")) return Either.left(registry.get(new ResourceLocation(s)));
-        return Either.right(SerializationTags.getInstance()
-                                             .getOrEmpty(registry.key())
-                                             .getTagOrEmpty(new ResourceLocation(s.substring(1))));
     }
 
     private static <K, V> Map<K, V> pairListToMap(List<Pair<K, V>> pairs) {
