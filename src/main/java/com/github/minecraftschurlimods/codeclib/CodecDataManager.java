@@ -27,11 +27,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
 public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implements Map<ResourceLocation, T> {
     private static final BiMap<Integer, CodecDataManager<?>> DATA_MANAGER = HashBiMap.create();
+    private static final Set<NetworkHandler> REGISTERED_SYNC_NETWORKS = new HashSet<>();
     private static final Gson GSON = new Gson();
     private final String folderName;
     private final Codec<T> codec;
@@ -169,7 +171,9 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
     }
 
     public final CodecDataManager<T> subscribeAsSyncable(NetworkHandler networkHandler) {
-        networkHandler.register(SyncPacket.class, NetworkDirection.PLAY_TO_CLIENT);
+        if (REGISTERED_SYNC_NETWORKS.add(networkHandler)) {
+            networkHandler.register(SyncPacket.class, NetworkDirection.PLAY_TO_CLIENT);
+        }
         MinecraftForge.EVENT_BUS.addListener((OnDatapackSyncEvent event) -> networkHandler.sendToPlayerOrAll(new SyncPacket<>(DATA_MANAGER.inverse().get(this), this.data), event.getPlayer()));
         return this;
     }
