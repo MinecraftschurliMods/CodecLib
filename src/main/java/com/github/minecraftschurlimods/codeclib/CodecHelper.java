@@ -1,10 +1,14 @@
 package com.github.minecraftschurlimods.codeclib;
 
-import com.mojang.datafixers.util.Either;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -31,7 +35,22 @@ public final class CodecHelper {
     public static final Codec<Component> COMPONENT = Codec.PASSTHROUGH.xmap(
             dynamic -> Component.Serializer.fromJson(dynamic.convert(JsonOps.INSTANCE).getValue()),
             component -> new Dynamic<>(JsonOps.INSTANCE, Component.Serializer.toJsonTree(component)));
+    public static final Codec<EntityPredicate> ENTITY_PREDICATE = Codec.PASSTHROUGH.xmap(
+            dynamic -> EntityPredicate.fromJson(dynamic.convert(JsonOps.INSTANCE).getValue()),
+            entityPredicate -> new Dynamic<>(JsonOps.INSTANCE, sanitizeJson(entityPredicate.serializeToJson())));
+    public static final Codec<MinMaxBounds.Ints> INT_MIN_MAX_BOUNDS = Codec.PASSTHROUGH.xmap(
+            dynamic -> MinMaxBounds.Ints.fromJson(dynamic.convert(JsonOps.INSTANCE).getValue()),
+            minMaxBounds -> new Dynamic<>(JsonOps.INSTANCE, minMaxBounds.serializeToJson()));
+    public static final Codec<MinMaxBounds.Doubles> DOUBLE_MIN_MAX_BOUNDS = Codec.PASSTHROUGH.xmap(
+            dynamic -> MinMaxBounds.Doubles.fromJson(dynamic.convert(JsonOps.INSTANCE).getValue()),
+            minMaxBounds -> new Dynamic<>(JsonOps.INSTANCE, minMaxBounds.serializeToJson()));
 
+    private static JsonElement sanitizeJson(final JsonElement json) {
+        if (json instanceof JsonObject object) {
+            object.entrySet().removeIf(entry -> entry.getValue() instanceof JsonNull);
+        }
+        return json;
+    }
 
     public static <K,V> Codec<Map<K,V>> mapOf(Codec<K> keyCodec, Codec<V> valueCodec) {
         return Codec.compoundList(keyCodec, valueCodec).xmap(CodecHelper::pairListToMap, CodecHelper::mapToPairList);

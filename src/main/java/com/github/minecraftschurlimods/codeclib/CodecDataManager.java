@@ -7,8 +7,11 @@ import com.google.common.collect.HashBiMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -41,6 +44,7 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
     private final Validator<Map<ResourceLocation, T>> validator;
     private Map<ResourceLocation, T> data = new HashMap<>();
     protected final Logger logger;
+    private boolean useRegistryOps = false;
 
     public CodecDataManager(String folderName, Codec<T> codec, Logger logger) {
         this(folderName, codec, codec, (m, l) -> {}, logger);
@@ -162,12 +166,16 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
 
     private Map<ResourceLocation, T> mapData(Map<ResourceLocation, JsonElement> dataIn) {
         Map<ResourceLocation, T> data = new HashMap<>();
-        dataIn.forEach((key, jsonElement) -> this.codec.decode(JsonOps.INSTANCE, jsonElement)
+        dataIn.forEach((key, jsonElement) -> this.codec.decode(getOps(), jsonElement)
                 .get()
                 .ifLeft(result -> data.put(key, result.getFirst()))
                 .ifRight(partial -> this.logger.error("Failed to parse data json for {} due to: {}", key.toString(), partial.message()))
         );
         return data;
+    }
+
+    private DynamicOps<JsonElement> getOps() {
+        return this.useRegistryOps ? RegistryOps.create(JsonOps.INSTANCE, RegistryAccess.BUILTIN.get()) : JsonOps.INSTANCE;
     }
 
     public final CodecDataManager<T> subscribeAsSyncable(NetworkHandler networkHandler) {
@@ -176,6 +184,10 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
         }
         MinecraftForge.EVENT_BUS.addListener((OnDatapackSyncEvent event) -> networkHandler.sendToPlayerOrAll(new SyncPacket<>(DATA_MANAGER.inverse().get(this), this.data), event.getPlayer()));
         return this;
+    }
+
+    public void useRegistryOps() {
+        this.useRegistryOps = true;
     }
 
     public static final class SyncPacket<T> implements IPacket {
