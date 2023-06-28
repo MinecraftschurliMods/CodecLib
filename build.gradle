@@ -60,7 +60,7 @@ repositories {
 
 dependencies {
     minecraft group: 'net.minecraftforge', name: 'forge', version: "${project.mc_version}-${project.forge_version}"
-    compileOnly fg.deobf('com.github.minecraftschurlimods:simplenetlib:1.19-1.0-SNAPSHOT')
+    compileOnly fg.deobf('com.github.minecraftschurlimods:simplenetlib:1.20.1-1.0-SNAPSHOT')
     compileOnly 'org.jetbrains:annotations:23.0.0'
 }
 

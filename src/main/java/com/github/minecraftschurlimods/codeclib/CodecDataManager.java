@@ -9,7 +9,6 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
@@ -245,7 +244,7 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
     }
 
     private DynamicOps<JsonElement> getOps() {
-        return this.useRegistryOps ? RegistryOps.create(JsonOps.INSTANCE, RegistryAccess.BUILTIN.get()) : JsonOps.INSTANCE;
+        return this.useRegistryOps ? RegistryOps.create(JsonOps.INSTANCE, RegistryAccessGetter.getRegistryAccess()) : JsonOps.INSTANCE;
     }
 
     public static final class SyncPacket<T> extends CodecPacket<Map<ResourceLocation, T>> {
