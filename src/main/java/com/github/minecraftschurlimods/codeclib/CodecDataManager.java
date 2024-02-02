@@ -9,6 +9,7 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
@@ -264,6 +265,11 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
         @Override
         protected Codec<Map<ResourceLocation, T>> codec() {
             return getDataManager(id()).networkCodec;
+        }
+
+        @Override
+        protected DynamicOps<Tag> ops() {
+            return getDataManager(id()).useRegistryOps ? RegistryOps.create(super.ops(), RegistryAccessGetter.getRegistryAccess()) : super.ops();
         }
 
         @Override
