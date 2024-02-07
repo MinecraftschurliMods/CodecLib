@@ -1,7 +1,5 @@
 package com.github.minecraftschurlimods.codeclib;
 
-import com.github.minecraftschurlimods.simplenetlib.CodecPacket;
-import com.github.minecraftschurlimods.simplenetlib.NetworkHandler;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.gson.Gson;
@@ -11,15 +9,16 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.neoforged.neoforge.network.registration.IPayloadRegistrar;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -124,12 +123,20 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
         }
     }
 
-    public final CodecDataManager<T> subscribeAsSyncable(NetworkHandler networkHandler) {
+    public synchronized final CodecDataManager<T> subscribeAsSyncable(IPayloadRegistrar registrar) {
         if (this.isSyncable) return this;
-        networkHandler.register(this.id, SyncPacket.class, NetworkDirection.PLAY_TO_CLIENT);
-        MinecraftForge.EVENT_BUS.addListener((OnDatapackSyncEvent event) -> {
+        registrar.play(this.id, fbb -> new SyncPacket(fbb), b -> b.client((packet, context) -> {
+            context.workHandler().execute(() -> receiveSyncedData(packet.data));
+        }));
+        NeoForge.EVENT_BUS.addListener((OnDatapackSyncEvent event) -> {
             if (this.data == null) return;
-            networkHandler.sendToPlayerOrAll(new SyncPacket<>(DATA_MANAGER.inverse().get(this), this.data), event.getPlayer());
+            SyncPacket syncPacket = new SyncPacket(this.data);
+            ServerPlayer player = event.getPlayer();
+            if (player != null) {
+                player.connection.send(syncPacket);
+            } else {
+                event.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(syncPacket));
+            }
         });
         this.isSyncable = true;
         return this;
@@ -248,18 +255,18 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
         return this.useRegistryOps ? RegistryOps.create(JsonOps.INSTANCE, RegistryAccessGetter.getRegistryAccess()) : JsonOps.INSTANCE;
     }
 
-    public static final class SyncPacket<T> extends CodecPacket<Map<ResourceLocation, T>> {
-        private SyncPacket(ResourceLocation id, Map<ResourceLocation, T> data) {
-            super(id, data);
+    public final class SyncPacket extends CodecPacket<Map<ResourceLocation, T>> {
+        private SyncPacket(Map<ResourceLocation, T> data) {
+            super(data);
         }
 
-        public SyncPacket(ResourceLocation id, FriendlyByteBuf buffer) {
-            super(id, buffer);
+        public SyncPacket(FriendlyByteBuf buffer) {
+            super(buffer);
         }
 
         @Override
         public ResourceLocation id() {
-            return this.id;
+            return CodecDataManager.this.id;
         }
 
         @Override
@@ -270,11 +277,6 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
         @Override
         protected DynamicOps<Tag> ops() {
             return getDataManager(id()).useRegistryOps ? RegistryOps.create(super.ops(), RegistryAccessGetter.getRegistryAccess()) : super.ops();
-        }
-
-        @Override
-        public void handle(NetworkEvent.Context ctx) {
-            ctx.enqueueWork(() -> getDataManager(id()).receiveSyncedData(this.data));
         }
 
         @SuppressWarnings("unchecked")

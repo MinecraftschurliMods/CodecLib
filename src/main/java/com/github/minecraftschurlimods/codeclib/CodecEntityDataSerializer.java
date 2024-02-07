@@ -1,7 +1,6 @@
 package com.github.minecraftschurlimods.codeclib;
 
 import com.mojang.serialization.Codec;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataSerializer;
@@ -19,7 +18,7 @@ public record CodecEntityDataSerializer<T>(Codec<T> codec, Consumer<String> erro
 
     @Override
     public void write(final FriendlyByteBuf buffer, final T value) {
-        buffer.writeNbt((CompoundTag) codec.encodeStart(NbtOps.INSTANCE, value).getOrThrow(false, errorConsumer));
+        buffer.writeNbt(codec.encodeStart(NbtOps.INSTANCE, value).getOrThrow(false, errorConsumer));
     }
 
     @Override

@@ -1,7 +1,9 @@
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
+@FieldsAreNonnullByDefault
 package com.github.minecraftschurlimods.codeclib;
 
-import com.mojang.blaze3d.MethodsReturnNonnullByDefault;
+import net.minecraft.FieldsAreNonnullByDefault;
+import net.minecraft.MethodsReturnNonnullByDefault;
 
 import javax.annotation.ParametersAreNonnullByDefault;
