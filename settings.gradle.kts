@@ -2,7 +2,7 @@ pluginManagement {
     plugins {
         id("org.ec4j.editorconfig") version "0.0.3"
         id("net.neoforged.gradle.userdev") version "7.0.80"
-        id("com.github.minecraftschurlimods.helperplugin") version "1.0"
+        id("com.github.minecraftschurlimods.helperplugin") version "1.1"
     }
     repositories {
         mavenLocal()
