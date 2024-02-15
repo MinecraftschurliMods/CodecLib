@@ -13,9 +13,10 @@ import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.crafting.Ingredient;
+import org.jetbrains.annotations.Contract;
 
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -35,17 +36,32 @@ public final class CodecHelper {
     @Deprecated(forRemoval = true)
     public static final Codec<MinMaxBounds.Doubles> DOUBLE_MIN_MAX_BOUNDS = MinMaxBounds.Doubles.CODEC;
 
-    public static <T extends Enum<T>> Codec<T> forStringEnum(Class<T> clazz) {
-        return Codec.STRING.xmap(s -> Enum.valueOf(clazz, s), Enum::name);
-    }
-
-    public static <T extends Enum<T>> Codec<T> forIntEnum(Class<T> clazz) {
-        return Codec.INT.xmap(i -> clazz.getEnumConstants()[i], Enum::ordinal);
-    }
-
     @Deprecated(forRemoval = true)
     public static <T> Codec<T> forRegistry(Supplier<Registry<T>> registrySupplier) {
         return registrySupplier.get().byNameCodec();
+    }
+
+    @Contract("_ -> new")
+    public static <E extends Enum<E>> Codec<E> forStringEnum(Class<E> clazz) {
+        return Codec.STRING.xmap(s -> Enum.valueOf(clazz, s), Enum::name);
+    }
+
+    @Contract("_ -> new")
+    public static <E extends Enum<E>> Codec<E> forIntEnum(Class<E> clazz) {
+        E[] enumConstants = clazz.getEnumConstants();
+        int size = enumConstants.length;
+        if (size < Byte.MAX_VALUE) {
+            return Codec.BYTE.xmap(i -> enumConstants[i], e -> (byte) e.ordinal());
+        }
+        if (size < Short.MAX_VALUE) {
+            return Codec.SHORT.xmap(i -> enumConstants[i], e -> (short) e.ordinal());
+        }
+        return Codec.INT.xmap(i -> enumConstants[i], Enum::ordinal);
+    }
+
+    @Contract("_ -> new")
+    public static <E extends Enum<E>> Codec<E> forEnum(Class<E> clazz) {
+        return ExtraCodecs.orCompressed(forStringEnum(clazz), forIntEnum(clazz));
     }
 
     public static <T> Codec<Set<T>> setOf(Codec<T> codec) {
@@ -82,22 +98,6 @@ public final class CodecHelper {
                 builder.add(elementCodec.encodeStart(ops, element));
             }
             return builder.build(prefix);
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            return Objects.equals(elementCodec, ((SetCodec<?>) o).elementCodec);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(elementCodec);
         }
 
         @Override
