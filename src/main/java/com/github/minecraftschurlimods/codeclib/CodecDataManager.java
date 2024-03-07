@@ -233,6 +233,7 @@ public class CodecDataManager<T> extends SimpleJsonResourceReloadListener implem
     }
 
     protected void receiveSyncedData(Map<ResourceLocation, T> data) {
+        if (this.data == data || data == null) return;
         if (this.data == null) {
             this.data = data;
         } else {
